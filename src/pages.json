@@ -3,7 +3,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "食物营养AI助手",
+        "navigationBarTitleText": "鹰宇食材分析",
         "navigationBarTextStyle": "black"
       }
 
@@ -17,7 +17,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "食物营养AI助手",
+    "navigationBarTitleText": "鹰宇食材分析",
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },

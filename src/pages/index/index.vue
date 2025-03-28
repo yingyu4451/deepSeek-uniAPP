@@ -137,7 +137,7 @@ async function sendMessage() {
 
   // 添加AI临时消息
   messageList.value.push({
-    content: '正在思考中',
+    content: '正在查询中',
     type: 'ai',
     timestamp: Date.now(),
     status: 'sending',
@@ -328,16 +328,6 @@ async function sendMessage() {
     </scroll-view>
 
     <view class="input-area">
-      <button
-        class="model-switch"
-        :class="{ active: currentModel === 'deepseek-reasoner' }"
-        @tap="currentModel = currentModel === 'deepseek-chat' ? 'deepseek-reasoner' : 'deepseek-chat'"
-      >
-        <text class="i-mdi-atom m-0 p-0 text-xl">
-          v3
-        </text>
-        <text>R1</text>
-      </button>
       <input
         v-model="inputMessage"
         class="message-input"
