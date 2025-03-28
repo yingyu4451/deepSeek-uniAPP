@@ -333,7 +333,6 @@ async function sendMessage() {
         class="message-input"
         type="text"
         placeholder="请输入您想了解的食物..."
-        :disabled="isLoading"
         @confirm="sendMessage"
         @input="error = ''"
       >
