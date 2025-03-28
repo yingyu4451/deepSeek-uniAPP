@@ -84,7 +84,7 @@ export async function chatWithAI(userMessage: string): Promise<string> {
             content: userMessage,
           },
         ],
-        temperature: 0.7,
+        temperature: 0.5,
         max_tokens: 800,
       },
     }) as unknown as RequestResponse
@@ -98,7 +98,7 @@ export async function chatWithAI(userMessage: string): Promise<string> {
   }
   catch (error) {
     console.error('DeepSeek API调用失败:', error)
-    throw new Error('无法获取AI回复，请稍后重试')
+    throw new Error('无法查询数据库，请稍后重试')
   }
   finally {
     isLoading.value = false
