@@ -1,9 +1,9 @@
 {
-  "name": "uni-app-vue3-vite",
+  "name": "鹰宇食材分析助手",
   "appid": "",
   "description": "",
-  "versionName": "1.0.0",
-  "versionCode": "100",
+  "versionName": "1.0.3",
+  "versionCode": "103",
   "transformPx": false,
   /* 5+App特有相关 */
   "app-plus": {
@@ -50,7 +50,7 @@
   "quickapp": {},
   /* 小程序特有相关 */
   "mp-weixin": {
-    "appid": "wxb3d842a4a7e3440d",
+    "appid": "wxdb16a214c8c623d1",
     "setting": {
       "urlCheck": false
     },

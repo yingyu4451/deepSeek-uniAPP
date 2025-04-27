@@ -80,7 +80,10 @@ function parseAIResponse(response: string): NutritionData | null {
     const fiber = Number(response.match(/膳食纤维：(\d+(?:\.\d*)?)克/)?.[1] || 0)
     const gi = Number(response.match(/GI值：(\d+)/)?.[1] || 0)
     const giLevel = response.match(/GI值：\d+\s*\(([低中高])\)/)?.[1] || '未知'
-    const advice = response.match(/【建议】\n•\s*(.+)/)?.[1] || ''
+
+    // 修改建议部分的解析逻辑
+    const adviceMatch = response.match(/【建议】\s*([\s\S]*?)(?=\n\n|$)/)
+    const advice = adviceMatch ? adviceMatch[1].trim() : ''
 
     // 检查是否成功解析到必要的营养数据
     if (calories === 0 && protein === 0 && fat === 0 && carbs === 0) {
@@ -216,7 +219,7 @@ async function sendMessage() {
               <!-- 营养成分列表 -->
               <view class="nutrition-section">
                 <view class="section-title">
-                  营养成分分析
+                  营养成分分析（每100克）
                 </view>
                 <view class="nutrition-list">
                   <view class="nutrition-item">
@@ -279,27 +282,27 @@ async function sendMessage() {
                   />
                 </view>
                 <view class="gi-value">
-                  GI值: {{ msg.nutritionData.gi }}
-                  <text
+                  <span class="gi-value-text">GI值: {{ msg.nutritionData.gi }}</span>
+                  <span
                     class="gi-level"
                     :class="{
-                      'text-green-500': msg.nutritionData.giLevel === '低',
-                      'text-yellow-500': msg.nutritionData.giLevel === '中',
-                      'text-red-500': msg.nutritionData.giLevel === '高',
+                      low: msg.nutritionData.giLevel === '低',
+                      medium: msg.nutritionData.giLevel === '中',
+                      high: msg.nutritionData.giLevel === '高',
                     }"
                   >
-                    ({{ msg.nutritionData.giLevel }})
-                  </text>
+                    {{ msg.nutritionData.giLevel }}
+                  </span>
                 </view>
               </view>
 
               <!-- 建议 -->
               <view class="advice-section">
                 <view class="section-title">
-                  食用建议
+                  食用建议（仅供参考）
                 </view>
                 <view class="advice-content">
-                  {{ msg.nutritionData.advice }}
+                  <text class="whitespace-pre-wrap">{{ msg.nutritionData.advice }}</text>
                 </view>
               </view>
             </view>
@@ -375,7 +378,7 @@ async function sendMessage() {
 }
 
 .message-time {
-  @apply text-xs text-gray-500 mb-1 px-2;
+  @apply text-sm text-gray-500 mb-1 px-2;
 }
 
 .message-item.user {
@@ -396,15 +399,15 @@ async function sendMessage() {
 
 /* 消息内容样式 */
 .message-content {
-  @apply max-w-[75%] rounded-xl px-3 py-2 text-sm break-words shadow-md transition-all duration-200;
+  @apply max-w-[75%] mb-2 px-3 rounded-xl py-2 text-base break-words shadow-md transition-all duration-300;
 }
 
 .user .message-content {
-  @apply bg-green-500 text-white mr-1;
+  @apply bg-gradient-to-bl from-green-500 from-30% to-lime-500 inset-9 text-slate-50 mr-1;
 }
 
 .ai .message-content {
-  @apply bg-white text-gray-800 ml-1;
+  @apply bg-white text-gray-800 ml-1 py-3 mb-4;
 }
 
 .error.message-content {
@@ -417,58 +420,79 @@ async function sendMessage() {
 }
 
 .section-title {
-  @apply text-base font-semibold text-gray-800 mb-2 pb-2 border-b border-gray-200;
+  @apply text-lg font-semibold text-gray-800 mb-1;
 }
 
 /* 营养列表样式 */
 .nutrition-section {
-  @apply bg-white pt-2 rounded-lg overflow-hidden;
+  @apply bg-white pt-2 rounded-lg overflow-hidden p-2;
 }
 
 .nutrition-list {
-  @apply divide-y divide-gray-100;
+  @apply divide-y divide-slate-200;
 }
 
 .nutrition-item {
-  @apply flex items-center justify-between py-3 px-2 hover:bg-gray-50 transition-colors duration-200;
+  @apply flex items-center justify-between py-[0.35rem] px-2 transition-colors duration-200;
 }
 
 .item-label {
-  @apply text-sm text-gray-600 font-medium;
+  @apply text-base text-gray-700 font-medium;
 }
 
 .item-value {
-  @apply text-sm font-bold text-gray-900;
+  @apply text-base font-bold text-gray-900;
 }
 
 /* 升糖指数样式 */
 .gi-section {
-  @apply mt-4 bg-white rounded-lg p-3;
+  @apply bg-white rounded-lg p-2;
 }
 
 .gi-meter {
-  @apply w-full bg-gray-100 rounded-full h-4 overflow-hidden mt-3;
+  @apply w-full bg-gray-100 rounded-full h-4 overflow-hidden mt-4 relative;
 }
 
 .gi-progress {
   @apply h-full rounded-full transition-all duration-500;
 }
 
+.gi-progress::after {
+  content: '';
+  @apply absolute right-0 top-0 h-full w-1 bg-white opacity-50;
+}
+
 .gi-value {
-  @apply text-sm text-gray-700 mt-2 font-semibold;
+  @apply flex items-center justify-between mt-2 text-base;
+}
+
+.gi-value-text {
+  @apply text-gray-700 font-semibold;
 }
 
 .gi-level {
-  @apply ml-1 font-bold;
+  @apply px-3 py-1 rounded-full text-sm font-bold;
+}
+
+.gi-level.low {
+  @apply bg-green-100 text-green-600;
+}
+
+.gi-level.medium {
+  @apply bg-yellow-100 text-yellow-600;
+}
+
+.gi-level.high {
+  @apply bg-red-100 text-red-600;
 }
 
 /* 建议部分样式 */
 .advice-section {
-  @apply mt-4 bg-gray-50 rounded-lg p-3;
+  @apply mt-4 bg-white rounded-lg p-2;
 }
 
 .advice-content {
-  @apply text-sm text-gray-700 leading-relaxed mt-2 px-1;
+  @apply text-base text-gray-700  leading-relaxed mt-2 px-1;
 }
 
 /* 输入区域样式 */
@@ -477,7 +501,7 @@ async function sendMessage() {
 }
 
 .message-input {
-  @apply flex-1 h-10 bg-gray-100 rounded-full px-4 text-sm transition-all duration-200;
+  @apply flex-1 h-10 bg-gray-100 rounded-full px-4 text-base transition-all duration-200;
 }
 
 .message-input:focus {
@@ -584,7 +608,7 @@ async function sendMessage() {
 
 /* 普通消息样式 */
 .normal-message {
-  @apply text-sm leading-relaxed whitespace-pre-wrap;
+  @apply text-base leading-relaxed whitespace-pre-wrap;
 }
 
 .normal-message .loading-dots {

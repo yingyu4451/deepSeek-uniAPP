@@ -1,6 +1,21 @@
 <script setup lang="ts">
 onLaunch(() => {
   console.log('App Launch')
+  const updateManager = uni.getUpdateManager()
+
+  updateManager.onCheckForUpdate((res) => {
+  // 请求完新版本信息的回调
+    if (res.hasUpdate) {
+      updateManager.onUpdateReady(() => {
+        uni.showToast({
+          title: '发现新版本',
+          success() {
+            updateManager.applyUpdate()
+          },
+        })
+      })
+    }
+  })
 })
 onShow(() => {
   console.log('App Show')
