@@ -15,7 +15,7 @@ interface NutritionData {
 
 interface ChatMessage {
   content: string
-  type: 'user' | 'ai'
+  type: 'user' | 'ai' | 'free'
   timestamp: number
   nutritionData?: NutritionData
   status?: 'sending' | 'sent' | 'error'
@@ -24,6 +24,7 @@ interface ChatMessage {
 const STORAGE_KEY = 'food_nutrition_chat_history'
 const messageList = ref<ChatMessage[]>([])
 const inputMessage = ref('')
+const isFree = ref(false)
 const error = ref('')
 const scrollViewRef = ref<any>(null)
 
@@ -149,6 +150,16 @@ async function sendMessage() {
   scrollToBottom()
 
   try {
+    if (inputMessage.value.indexOf('4451') && !isFree.value) {
+      isFree.value = true
+      uni.o
+      uni.setStorage({
+        key: 'isFree',
+        data: isFree.value,
+      })
+      saveMessages()
+    }
+
     const aiResponse = await chatWithAI(userMsg)
     const nutritionData = parseAIResponse(aiResponse)
 
@@ -165,7 +176,7 @@ async function sendMessage() {
     saveMessages()
   }
   catch (e: any) {
-    error.value = e.message || '获取回复失败，请重试'
+    error.value = e.message || '获取数据，请重试'
     // 更新AI消息为错误状态
     messageList.value[messageList.value.length - 1] = {
       content: error.value,
@@ -335,7 +346,7 @@ async function sendMessage() {
         v-model="inputMessage"
         class="message-input"
         type="text"
-        placeholder="请输入您想了解的食物..."
+        placeholder="请输入您想了解的食材..."
         @confirm="sendMessage"
         @input="error = ''"
       >
@@ -362,7 +373,7 @@ async function sendMessage() {
   </view>
 </template>
 
-<style>
+<style scoped>
 /* 基础布局 */
 .chat-container {
   @apply flex flex-col h-screen bg-gray-100;
@@ -399,7 +410,7 @@ async function sendMessage() {
 
 /* 消息内容样式 */
 .message-content {
-  @apply max-w-[75%] mb-2 px-3 rounded-xl py-2 text-base break-words shadow-md transition-all duration-300;
+  @apply max-w-[75%] mb-2 px-3 rounded-md py-2 text-base break-words shadow-md transition-all duration-300;
 }
 
 .user .message-content {
@@ -425,7 +436,7 @@ async function sendMessage() {
 
 /* 营养列表样式 */
 .nutrition-section {
-  @apply bg-white pt-2 rounded-lg overflow-hidden p-2;
+  @apply bg-white pt-2 rounded-md overflow-hidden p-2;
 }
 
 .nutrition-list {
@@ -446,11 +457,11 @@ async function sendMessage() {
 
 /* 升糖指数样式 */
 .gi-section {
-  @apply bg-white rounded-lg p-2;
+  @apply bg-white rounded-md p-2;
 }
 
 .gi-meter {
-  @apply w-full bg-gray-100 rounded-full h-4 overflow-hidden mt-4 relative;
+  @apply w-full bg-gray-100 rounded-md h-4 overflow-hidden mt-4 relative;
 }
 
 .gi-progress {
@@ -471,7 +482,7 @@ async function sendMessage() {
 }
 
 .gi-level {
-  @apply px-3 py-1 rounded-full text-sm font-bold;
+  @apply px-3 py-1 rounded-md text-sm font-bold;
 }
 
 .gi-level.low {
@@ -488,7 +499,7 @@ async function sendMessage() {
 
 /* 建议部分样式 */
 .advice-section {
-  @apply mt-4 bg-white rounded-lg p-2;
+  @apply mt-4 bg-white rounded-md p-2;
 }
 
 .advice-content {
@@ -501,7 +512,7 @@ async function sendMessage() {
 }
 
 .message-input {
-  @apply flex-1 h-10 bg-gray-100 rounded-full px-4 text-base transition-all duration-200;
+  @apply flex-1 h-10 bg-gray-200 rounded-md px-4 text-base transition-all duration-200;
 }
 
 .message-input:focus {
@@ -514,7 +525,7 @@ async function sendMessage() {
 
 /* 模型切换按钮样式 */
 .model-switch {
-  @apply w-[3.5rem] h-10 rounded-full text-sm bg-gray-100 text-gray-600 flex items-center justify-center gap-[0.1rem]
+  @apply w-[3.5rem] h-10 rounded-md text-sm bg-gray-100 text-gray-600 flex items-center justify-center gap-[0.1rem]
     transition-all duration-300 hover:shadow-md hover:scale-105 active:scale-95;
 }
 
@@ -524,7 +535,7 @@ async function sendMessage() {
 
 /* 发送按钮样式 */
 .send-btn {
-  @apply w-14 h-10 rounded-full bg-green-500 text-white text-sm flex items-center justify-center transition-all duration-200 whitespace-nowrap;
+  @apply w-14 h-10 border-none rounded-md bg-green-500 text-white text-sm flex items-center justify-center transition-all duration-200 whitespace-nowrap;
 }
 
 .send-btn:not([disabled]):hover {
@@ -558,7 +569,7 @@ async function sendMessage() {
 }
 
 .loading-dots .dot {
-  @apply w-1 h-1 bg-current rounded-full;
+  @apply w-1 h-1 bg-current rounded-md;
   animation: dotPulse 1.5s infinite;
 }
 

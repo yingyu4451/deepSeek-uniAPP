@@ -30,6 +30,10 @@ onHide(() => {
 @use 'tailwindcss/components';
 @use 'tailwindcss/utilities';
 
+button::after {
+  @apply border-none;
+}
+
 /*  #ifdef  H5  */
 svg {
   display: initial;
