@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { chatWithAI, currentModel, isLoading } from '@/services/deepseek'
+import { useUserStore } from '@/stores/userInfo'
 import { nextTick, onMounted, ref } from 'vue'
 
 interface NutritionData {
@@ -24,7 +25,6 @@ interface ChatMessage {
 const STORAGE_KEY = 'food_nutrition_chat_history'
 const messageList = ref<ChatMessage[]>([])
 const inputMessage = ref('')
-const isFree = ref(false)
 const error = ref('')
 const scrollViewRef = ref<any>(null)
 
@@ -65,6 +65,7 @@ function loadMessages() {
 // 在页面加载时读取历史记录
 onMounted(() => {
   loadMessages()
+  useUserStore().checkIsFree()
 })
 
 function parseAIResponse(response: string): NutritionData | null {
@@ -126,6 +127,17 @@ function scrollToBottom() {
 
 async function sendMessage() {
   if (!inputMessage.value.trim() || isLoading.value) { return }
+  
+  if (inputMessage.value.trim().includes('4451') && useUserStore().isFree === false) {
+      useUserStore().isFree = true
+      uni.showToast({
+        title: '限制解除',
+      })
+      uni.setStorage({
+        key: 'isFree',
+        data: useUserStore().isFree,
+      })
+    }
 
   error.value = ''
   const userMsg = inputMessage.value
@@ -150,15 +162,7 @@ async function sendMessage() {
   scrollToBottom()
 
   try {
-    if (inputMessage.value.indexOf('4451') && !isFree.value) {
-      isFree.value = true
-      uni.o
-      uni.setStorage({
-        key: 'isFree',
-        data: isFree.value,
-      })
-      saveMessages()
-    }
+
 
     const aiResponse = await chatWithAI(userMsg)
     const nutritionData = parseAIResponse(aiResponse)

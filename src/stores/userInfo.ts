@@ -2,11 +2,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useUserStore = defineStore('counter', () => {
+  const isLogin = ref(false)
+  const isFree = ref(false)
   const userInfo = ref({
     id: '',
     openid: '',
     avatar_url: '../../static/img/default-avatar.jpg',
-    nickname: '未登录',
+    nickname: '',
     gender: 0,
     points: '0',
     level: '0',
@@ -25,7 +27,7 @@ export const useUserStore = defineStore('counter', () => {
 
   function getUserData() {
     uni.request({
-      url: `http://localhost:3000/api/getUserData/${userInfo.value.openid}`,
+      url: `https://panyy.xyz/api/getUserData/${userInfo.value.openid}`,
       success(res) {
         console.log('getUserData api/getUserData', res.data)
 
@@ -44,5 +46,46 @@ export const useUserStore = defineStore('counter', () => {
     })
   }
 
-  return { userInfo, getUserData, StringGender }
+  function userLogin() {
+    uni.setStorage({ key: 'isLogin', data: isLogin.value })
+    isLogin.value = true
+  }
+
+  function userLogOut() {
+    uni.removeStorage({ key: 'isLogin' })
+    isLogin.value = false
+  }
+
+  function checkIsFree() {
+    uni.getStorage({
+      key: 'isFree',
+      success: ({ data }) => {
+        isFree.value = data
+        console.log('isfree', data, isFree.value)
+      },
+      fail: (error) => {
+        isFree.value = false
+      },
+    })
+  }
+
+  function initUserData() {
+    userInfo.value = {
+      id: '',
+      openid: '',
+      avatar_url: '../../static/img/default-avatar.jpg',
+      nickname: '',
+      gender: 0,
+      points: '0',
+      level: '0',
+      birth_date: '',
+      height: '',
+      weight: '',
+      name: '',
+      phone: '',
+      qq: '',
+    }
+  }
+
+  return { userInfo, getUserData, StringGender, initUserData, userLogin, userLogOut, isLogin, isFree, checkIsFree }
 })

@@ -6,21 +6,29 @@ const userInfoStore = useUserStore()
 
 const pickerViewData = ref()
 
-const isLogin = ref(false)
-
 const version = uni.getAccountInfoSync()
 
 const createUserPopup = ref()
 
 const openid = ref()
 
+function cleanData(obj: Record<string, any>) {
+  const result: Record<string, any> = {}
+  for (const key in obj) {
+    if (obj[key] !== null) {
+      result[key] = obj[key]
+    }
+  }
+  return result
+}
+
 const createUserInfo = ref({
-  nickname: '',
-  birth_date: '',
-  gender: 0,
-  avatar_url: '',
-  height: '',
-  weight: '',
+  nickname: null,
+  birth_date: null,
+  gender: null,
+  avatar_url: null,
+  height: null,
+  weight: null,
 })
 
 const genderOption = ref([{
@@ -33,6 +41,13 @@ const genderOption = ref([{
   value: 0,
   text: '保密',
 }])
+
+const navList = ref([
+  { title: `个人信息`, icon: '', titleClassName: '', url: '/pages/userInfo/userInfo' },
+  { title: `清空聊天记录`, icon: '', titleClassName: '', url: '' },
+  { title: `退出登录`, icon: '', titleClassName: '', url: '' },
+  { title: `${version.miniProgram.version || 0}`, icon: '', titleClassName: '', url: '' },
+])
 
 function isVueRef(ref: any): ref is { value: any } {
   return typeof ref === 'object' && 'value' in ref
@@ -65,11 +80,11 @@ async function getCheckSessionKey(code2Session) {
 
 function getUserData() {
   uni.request({
-    url: `http://localhost:3000/api/getUserData/${openid.value}`,
+    url: `https://panyy.xyz/api/getUserData/${openid.value}`,
     success(res) {
       console.log('getUserData api/getUserData', res.data)
 
-      isLogin.value = true
+      userInfoStore.userLogin()
       if (res.data.data.length === 0) {
         uni.hideLoading()
         togglePopup(createUserPopup, true)
@@ -102,16 +117,9 @@ function userLogin() {
     success(loginRes) {
       console.log('userLogin uni.login', loginRes)
 
-      uni.getUserInfo({
-        provider: 'weixin',
-        success(result) {
-          console.log(result)
-        },
-      })
-
       // 获取用户唯一标识ID和会话密钥
       uni.request({
-        url: 'http://localhost:3000/api/userLogin',
+        url: 'https://panyy.xyz/api/userLogin',
         method: 'POST',
         data: {
           code: loginRes.code,
@@ -141,21 +149,22 @@ function createUser() {
     title: '注册中',
   })
   uni.request({
-    url: `http://localhost:3000/api/createUser/${openid.value}`,
+    url: `https://panyy.xyz/api/createUser/${openid.value}`,
     method: 'POST',
     data: {
-      name: '',
+      openid: openid.value,
       birth_date: createUserInfo.value.birth_date,
       weight: createUserInfo.value.weight,
       height: createUserInfo.value.height,
       nickname: createUserInfo.value.nickname,
-      avatar_url: userInfo.avatar_url,
-      phone: '',
-      qq: '',
+      avatar_url: userInfoStore.userInfo.avatar_url,
+      gender: createUserInfo.value.gender,
     },
     success(res) {
       console.log(res)
       uni.hideLoading()
+      userInfoStore.getUserData()
+      togglePopup(createUserPopup, false)
     },
   })
 }
@@ -167,12 +176,15 @@ function cancelCreateUser() {
   console.log('openid.value', openid.value)
 
   uni.request({
-    url: `http://localhost:3000/api/createUser/${openid.value}`,
+    url: `https://panyy.xyz/api/createUser/${openid.value}`,
     method: 'POST',
-    data: {},
+    data: {
+      openid: openid.value,
+    },
     success(res) {
       console.log(res)
       uni.hideLoading()
+      userInfoStore.getUserData()
       togglePopup(createUserPopup, false)
     },
   })
@@ -186,10 +198,38 @@ function navigateTo(path) {
   }
 }
 
-const navList = ref([
-  { title: `个人信息`, icon: '', titleClassName: '', url: '/pages/userInfo/userInfo' },
-  { title: `${version.miniProgram.version || 0}`, icon: '', titleClassName: '', url: '' },
-])
+function handleNavClick(item) {
+  switch (item.title) {
+    case '个人信息':
+      navigateTo(item.url)
+      break
+    case '退出登录':
+      uni.showModal({
+        title: '提示',
+        content: '确定退出登录吗？',
+        showCancel: true,
+        success: (res) => {
+          if (res.confirm) {
+            userInfoStore.userLogOut()
+            userInfoStore.initUserData()
+          }
+        },
+      })
+      break
+    case '清空聊天记录':
+      uni.showModal({
+        title: '提示',
+        content: '确定清空数据吗？',
+        showCancel: true,
+        success: ({ confirm, cancel }) => {
+          if (confirm) {
+            uni.removeStorage({ key: 'food_nutrition_chat_history' })
+            uni.reLaunch({ url: '/pages/index/index' })
+          }
+        },
+      })
+  }
+}
 
 // 页面加载时获取用户信息
 onMounted(async () => {
@@ -206,13 +246,13 @@ onMounted(async () => {
     <!-- 用户信息 -->
     <view class="user-info">
       <view class="left">
+        <!-- 用户头像 -->
         <image class="avatar" :src="userInfoStore.userInfo.avatar_url" />
       </view>
-      <view v-if="isLogin" class="right">
-        <text v-if="userInfoStore.userInfo.nickname.includes('微信用户')" class="nickname">{{ userInfoStore.userInfo.nickname + userInfoStore.userInfo.id.slice(0, 4) }}</text>
+      <view v-if="userInfoStore.isLogin" class="right">
+        <!-- 用户昵称 -->
+        <text v-if="userInfoStore.userInfo.nickname.includes('微信用户')" class="nickname">{{ userInfoStore.userInfo.nickname + userInfoStore.userInfo.id.slice(0, 5) }}</text>
         <text v-else class="nickname">{{ userInfoStore.userInfo.nickname }}</text>
-        <text><span class="i-mdi-level-crossing-signals" /> {{ userInfoStore.userInfo.level }}</text>
-        <text class="nickname block">{{ userInfoStore.userInfo.points }}</text>
       </view>
       <view v-else class="right" @click="userLogin">
         点击登录
@@ -222,9 +262,9 @@ onMounted(async () => {
     <view class="nav">
       <view v-for="(navItem, navItemIndex) in navList" :key="navItemIndex">
         <button
-          v-if="isLogin" class="nav-item"
+          v-if="userInfoStore.isLogin || navItem.title === '清空聊天记录'" class="nav-item"
           :class="navItem.titleClassName"
-          @click="navigateTo(navItem.url)"
+          @click="handleNavClick(navItem)"
         >
           <text class="nav-text">{{ navItem.title }}</text>
         </button>
@@ -284,7 +324,7 @@ onMounted(async () => {
 
 <style scoped>
 .container {
-  @apply bg-gray-100 p-3 space-y-4;
+  @apply bg-gray-100 p-3 space-y-4 h-screen;
 }
 
 .user-info {
