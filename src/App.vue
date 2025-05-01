@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useUserStore } from './stores/userInfo'
+
 onLaunch(() => {
   console.log('App Launch')
   const updateManager = uni.getUpdateManager()
@@ -16,6 +19,18 @@ onLaunch(() => {
       })
     }
   })
+  const userIsLogin = ref()
+
+  uni.getStorage({ key: 'isLogin', success(result) {
+    userIsLogin.value = result.data
+
+    if (userIsLogin.value) {
+      uni.getStorage({ key: 'userInfo', success(useInfoRes) {
+        useUserStore().isLogin = true
+        useUserStore().userInfo = useInfoRes.data
+      } })
+    }
+  } })
 })
 onShow(() => {
   console.log('App Show')

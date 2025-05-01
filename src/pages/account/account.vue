@@ -46,7 +46,7 @@ const navList = ref([
   { title: `个人信息`, icon: '', titleClassName: '', url: '/pages/userInfo/userInfo' },
   { title: `清空聊天记录`, icon: '', titleClassName: '', url: '' },
   { title: `退出登录`, icon: '', titleClassName: '', url: '' },
-  { title: `${version.miniProgram.version || 0}`, icon: '', titleClassName: '', url: '' },
+  { title: `版本号：${version.miniProgram.version || 0}`, icon: '', titleClassName: '', url: '' },
 ])
 
 function isVueRef(ref: any): ref is { value: any } {
@@ -93,9 +93,7 @@ function getUserData() {
         console.log('res.data.data[0]', res.data.data[0])
 
         userInfoStore.userInfo = res.data.data[0]
-        // console.log('useUserStore().userInfo', useUserStore().userInfo)
-        // console.log('userinfo', userInfo)
-
+        userInfoStore.setUserInfoStorge()
         uni.hideLoading()
         uni.showToast({
           title: '登录成功',
@@ -125,9 +123,8 @@ function userLogin() {
           code: loginRes.code,
         },
         success(result) {
-          console.log('userLogin api/userLogin', result.data)
-          console.log(result.data.openid)
-
+          // console.log('userLogin api/userLogin', result.data)
+          // console.log(result.data.openid)
           openid.value = result.data.openid
           getUserData()
         },
@@ -223,7 +220,7 @@ function handleNavClick(item) {
         showCancel: true,
         success: ({ confirm, cancel }) => {
           if (confirm) {
-            uni.removeStorage({ key: 'food_nutrition_chat_history' })
+            uni.removeStorage({ key: 'chat_records' })
             uni.reLaunch({ url: '/pages/index/index' })
           }
         },
@@ -262,7 +259,7 @@ onMounted(async () => {
     <view class="nav">
       <view v-for="(navItem, navItemIndex) in navList" :key="navItemIndex">
         <button
-          v-if="userInfoStore.isLogin || navItem.title === '清空聊天记录'" class="nav-item"
+          v-if="userInfoStore.isLogin || navItem.title.includes('清空聊天记录') || navItem.title.includes('版本号')" class="nav-item"
           :class="navItem.titleClassName"
           @click="handleNavClick(navItem)"
         >

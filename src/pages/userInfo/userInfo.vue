@@ -61,59 +61,40 @@ function updateUserData() {
   })
 }
 
-function getFileData(tempPath) {
-  return new Promise((resolve, reject) => {
-    uni.getFileSystemManager().readFile({
-      filePath: tempPath,
-      encoding: 'base64', // 或 'binary' 获取ArrayBuffer
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: reject,
-    })
-  })
-}
-
-async function onChooseAvatar(e) {
+function onChooseAvatar(e) {
   console.log(e)
 
   const { avatarUrl } = e.detail
   userInfoStore.userInfo.avatar_url = avatarUrl
 
-  const { tempFilePath } = await uni.downloadFile({
-    url: avatarUrl,
+  uni.uploadFile({
+    url: 'https://panyy.xyz/api//uploadImage', // 服务器接口地址
+    filePath: avatarUrl,
+    name: `${userInfoStore.userInfo.openid}.jpeg`, // 后端接收的文件参数名
+    success: (uploadRes) => {
+      // 上传nuxt返回的图片公共地址到数据库
+
+      const res = JSON.parse(uploadRes.data)
+      console.log(res)
+
+      uni.request({
+        url: `https://panyy.xyz/api/updateUserData/${userInfoStore.userInfo.openid}`,
+        method: 'POST',
+        data: {
+          avatar_url: res.publicUrl,
+        },
+        success(result) {
+          console.log('onChooseAvatar request', result)
+          userInfoStore.getUserData()
+          uni.showToast({ title: '上传成功' })
+        },
+      })
+    },
+    fail: (err) => {
+      console.error(err)
+      uni.showToast({ title: '上传失败', icon: 'none' })
+    },
   })
-  // 2. 读取文件为 Base64 或 ArrayBuffer
-  const fileData = getFileData(tempFilePath)
-
-  console.log('onChooseAvatar filedata', fileData)
-
-  // 3. 准备上传数据
-  const formData = {
-    file: `data:image/jpeg;base64,${fileData}`,
-    fileName: `avatar/${userInfoStore.userInfo.openid}.jpg`,
-    fileType: 'image/jpeg',
-  }
-
-  // 4. 调用 Nuxt3 API 上传到 Supabase
-  try {
-    const response = await uni.request({
-      url: 'https://panyy.xyz/api/uploadImage', // 替换为你的 Nuxt3 API 地址
-      method: 'POST',
-      data: formData,
-      header: {
-        'Content-Type': 'application/json',
-        // 如果需要认证，添加你的认证头
-      },
-    })
-
-    console.log('上传成功:', response.data)
-    // 处理成功响应
-  }
-  catch (error) {
-    console.error('上传失败:', error)
-    // 处理错误
-  }
 }
 
 function editInfo(infoItem) {
@@ -127,27 +108,18 @@ function editInfo(infoItem) {
 <template>
   <view class="container">
     <view class="nav">
-      <view
-        class="nav-item"
-      >
+      <view class="nav-item">
         <text class="nav-text">头 像</text>
-        <button
-          class="justify-self-end "
-          open-type="chooseAvatar"
-          @chooseavatar="onChooseAvatar"
-        >
-          <image
-            class="size-20 rounded-md align-middle"
-            :src="userInfoStore.userInfo.avatar_url"
-          />
+        <button class="justify-self-end " open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
+          <image class="size-20 rounded-md align-middle" :src="userInfoStore.userInfo.avatar_url" />
         </button>
       </view>
-      <view
-        v-for="(navItem, navItemIndex) in navList" :key="navItemIndex" class="nav-item"
-        @click="editInfo(navItem)"
-      >
+      <view v-for="(navItem, navItemIndex) in navList" :key="navItemIndex" class="nav-item" @click="editInfo(navItem)">
         <text class="nav-text">{{ navItem.title }}</text>
-        <text v-if="navItem.key !== 'gender'" class="nav-text justify-self-end">{{ userInfoStore.userInfo[navItem.key] || '未填写' }}</text>
+        <text v-if="navItem.key !== 'gender'" class="nav-text justify-self-end">
+          {{ userInfoStore.userInfo[navItem.key]
+            || '未填写' }}
+        </text>
         <text v-else class="nav-text justify-self-end">{{ userInfoStore.StringGender || '未填写' }}</text>
       </view>
     </view>
@@ -173,7 +145,10 @@ function editInfo(infoItem) {
         </view>
       </uni-section>
       <!-- 用户名输入框 -->
-      <uni-section v-if="!['gender', 'birth_date'].includes(currentNavSelect.key)" type="line" :title="currentNavSelect.title">
+      <uni-section
+        v-if="!['gender', 'birth_date'].includes(currentNavSelect.key)" type="line"
+        :title="currentNavSelect.title"
+      >
         <view class="input-item">
           <uni-easyinput v-model="currentNavSelect.value" type="nickname" placeholder="请输入用户名" />
         </view>

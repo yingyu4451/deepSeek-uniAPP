@@ -46,14 +46,24 @@ export const useUserStore = defineStore('counter', () => {
     })
   }
 
+  function setUserInfoStorge() {
+    uni.setStorage({ key: 'userInfo', data: userInfo.value })
+    uni.setStorage({ key: 'chat_records', data: userInfo.value.chat_records })
+  }
+
   function userLogin() {
-    uni.setStorage({ key: 'isLogin', data: isLogin.value })
     isLogin.value = true
+    uni.setStorage({ key: 'isLogin', data: isLogin.value })
   }
 
   function userLogOut() {
-    uni.removeStorage({ key: 'isLogin' })
     isLogin.value = false
+    uni.removeStorage({ key: 'isLogin' })
+    uni.removeStorage({ key: 'userInfo' })
+    uni.removeStorage({ key: 'chat_records' })
+    uni.reLaunch({
+      url: '/pages/index/index',
+    })
   }
 
   function checkIsFree() {
@@ -87,5 +97,5 @@ export const useUserStore = defineStore('counter', () => {
     }
   }
 
-  return { userInfo, getUserData, StringGender, initUserData, userLogin, userLogOut, isLogin, isFree, checkIsFree }
+  return { userInfo, getUserData, StringGender, initUserData, userLogin, userLogOut, isLogin, isFree, checkIsFree, setUserInfoStorge }
 })
